@@ -1,0 +1,118 @@
+// main.cpp —— cloc 入口：命令行解析、调度、汇总与断言自检
+//
+// 用法: cloc <目录或源文件> [-o <输出文件>]
+// 退出码: 0 正常；1 用法/路径/输出文件错误；2 行数恒等式校验失败
+
+#include "counter.h"
+#include "reporter.h"
+#include "scanner.h"
+
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <string>
+#include <vector>
+
+namespace {
+
+void printUsage(const char* prog) {
+    std::cerr << "用法: " << prog << " <目录或源文件> [-o <输出文件>]\n"
+              << "递归统计 .c/.cpp/.cc 源码的代码行、注释行与空行。\n"
+              << "  -o <文件>  将结果写入文件而非标准输出\n";
+}
+
+// 题目要求的自检断言：Lines == Code + Comments + Blanks。
+// 用显式校验而非 assert()，保证 Release（NDEBUG）下依然生效。
+bool checkInvariant(const std::string& where, long lines, long code,
+                    long comments, long blanks) {
+    if (lines == code + comments + blanks) return true;
+    std::cerr << "内部错误: " << where << " 行数不自洽: Lines(" << lines
+              << ") != Code(" << code << ") + Comments(" << comments
+              << ") + Blanks(" << blanks << ")\n";
+    return false;
+}
+
+} // namespace
+
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        printUsage(argv[0]);
+        return 1;
+    }
+
+    const std::string target = argv[1];
+    std::string outputFile;
+    for (int i = 2; i < argc; ++i) {
+        if (std::string(argv[i]) == "-o" && i + 1 < argc) {
+            outputFile = argv[++i];
+        } else {
+            printUsage(argv[0]);
+            return 1;
+        }
+    }
+
+    const cloc::ScanResult scan = cloc::collectSources(target);
+    if (scan.sourceFiles.empty()) {
+        std::cerr << "在 \"" << target << "\" 中未找到 .c/.cpp/.cc 源文件"
+                     "（请检查路径）。\n";
+        return 1;
+    }
+
+    std::map<std::string, cloc::LanguageStats> byLanguage;
+    long errorFiles = 0;
+    bool consistent = true;
+
+    for (size_t k = 0; k < scan.sourceFiles.size(); ++k) {
+        const std::string& path = scan.sourceFiles[k];
+        std::ifstream in(path.c_str(), std::ios::in | std::ios::binary);
+        if (!in) {
+            ++errorFiles;
+            continue;
+        }
+
+        const cloc::FileCount fc = cloc::countSource(in);
+
+        // 断言 1：单文件行数自洽（题目要求）
+        if (!checkInvariant(path, fc.lines, fc.code, fc.comments, fc.blanks))
+            consistent = false;
+
+        const std::string lang = cloc::languageOf(path);
+        cloc::LanguageStats& st = byLanguage[lang];
+        st.language = lang;
+        ++st.files;
+        st.lines += fc.lines;
+        st.code += fc.code;
+        st.comments += fc.comments;
+        st.blanks += fc.blanks;
+    }
+
+    // 断言 2：每种语言汇总后仍然自洽
+    for (std::map<std::string, cloc::LanguageStats>::const_iterator
+             it = byLanguage.begin(); it != byLanguage.end(); ++it) {
+        const cloc::LanguageStats& st = it->second;
+        if (!checkInvariant("汇总(" + st.language + ")", st.lines, st.code,
+                            st.comments, st.blanks))
+            consistent = false;
+    }
+
+    cloc::Summary summary;
+    for (std::map<std::string, cloc::LanguageStats>::const_iterator
+             it = byLanguage.begin(); it != byLanguage.end(); ++it)
+        summary.languages.push_back(it->second);
+    summary.ignoredFiles = scan.ignoredFiles;
+    summary.errorFiles = errorFiles;
+
+    if (outputFile.empty()) {
+        cloc::report(summary, std::cout);
+    } else {
+        std::ofstream out(outputFile.c_str());
+        if (!out) {
+            std::cerr << "无法打开输出文件: " << outputFile << "\n";
+            return 1;
+        }
+        cloc::report(summary, out);
+        std::cout << "统计结果已写入 " << outputFile << "\n";
+    }
+
+    return consistent ? 0 : 2;
+}
