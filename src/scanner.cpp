@@ -33,7 +33,8 @@ std::string extensionOf(const std::string& name) {
 
 bool hasSourceExtension(const std::string& name) {
     const std::string ext = extensionOf(name);
-    return ext == "c" || ext == "cpp" || ext == "cc";
+    return ext == "c" || ext == "cpp" || ext == "cc" ||
+           ext == "rb" || ext == "rbw";
 }
 
 std::string joinPath(const std::string& dir, const std::string& name) {
@@ -124,6 +125,7 @@ std::string languageOf(const std::string& path) {
     const std::string ext = extensionOf(path);
     if (ext == "c") return "C";
     if (ext == "cpp" || ext == "cc") return "C++";
+    if (ext == "rb" || ext == "rbw") return "Ruby";
     return "";
 }
 
