@@ -28,7 +28,7 @@
 
 ## 编译建造指南
 
-依赖：CMake ≥ 3.15 + 任意 C++11 编译器（MSVC、MinGW-w64 GCC、Clang、Linux GCC 均可）。
+依赖：CMake ≥ 3.15 + 支持 C++17 的编译器（MSVC 2017 15.7+、GCC 9+、Clang 7+；GCC 8 由 CMake 自动附加 `stdc++fs` 链接）。
 
 ### 方式一：CLion（Windows）
 
@@ -100,7 +100,7 @@ powershell -ExecutionPolicy Bypass -File tests\verify.ps1
 ## 项目结构
 
 ```
-CMakeLists.txt          构建脚本（C++11，MSVC / MinGW / GCC 通用）
+CMakeLists.txt          构建脚本（C++17，MSVC / MinGW-w64 / GCC 通用）
 README.md               本文件：编译与使用指南
 DESIGN.md               设计说明：状态机、归类规则、边缘情况清单
 src/
