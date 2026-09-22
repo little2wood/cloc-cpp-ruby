@@ -78,7 +78,7 @@ enum CppState {
     StNormal,       // 普通代码
     StString,       // "..." 字符串字面量
     StChar,         // '...' 字符字面量
-    StRawString,    // R"(...)" 原始字符串（C++11，基本支持）
+    StRawString,    // R"(...)" 原始字符串（C++11，含 u8R/uR/UR/LR 前缀；自定义定界符未支持）
     StLineComment,  // // 行注释
     StBlockComment  // /* ... */ 块注释
 };
