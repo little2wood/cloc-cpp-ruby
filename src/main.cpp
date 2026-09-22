@@ -17,9 +17,57 @@
 #include <string>
 #include <vector>
 
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 namespace {
 
+#ifdef _WIN32
+// 控制台 UTF-8 守卫（惰性）：诊断信息为 UTF-8 字节，Windows 控制台默认按
+// GBK 解码会乱码。但 SetConsoleOutputCP 会触发 conhost 整屏重绘（且可能
+// 切换字体），若在启动时切换，大目录统计的数秒运行期间画面会保持"拉伸"
+// 状态。因此不在启动时切换，而是首次输出诊断信息前才切换；成功路径只
+// 输出 ASCII 表格，全程不切换、无任何视觉扰动。进程退出时恢复原代码页
+// （全局对象的析构保证覆盖所有返回路径）。
+class ConsoleUtf8 {
+public:
+    // 注意：deleted 拷贝构造属于"用户声明的构造函数"，会抑制隐式默认
+    // 构造，必须显式 default，否则全局对象 g_consoleUtf8 无法定义。
+    ConsoleUtf8() = default;
+    ~ConsoleUtf8() {
+        if (switched_) SetConsoleOutputCP(old_);
+    }
+    void ensure() {
+        if (!tried_) {
+            tried_ = true;
+            old_ = GetConsoleOutputCP();
+            if (old_ != CP_UTF8) {   // 用户已手动 chcp 65001 时不再切换
+                SetConsoleOutputCP(CP_UTF8);
+                switched_ = true;
+            }
+        }
+    }
+    ConsoleUtf8(const ConsoleUtf8&) = delete;
+    ConsoleUtf8& operator=(const ConsoleUtf8&) = delete;
+
+private:
+    bool tried_ = false;
+    bool switched_ = false;
+    UINT old_ = 0;
+};
+
+ConsoleUtf8 g_consoleUtf8;
+inline void ensureConsoleUtf8() { g_consoleUtf8.ensure(); }
+#else
+inline void ensureConsoleUtf8() {}   // 非 Windows：窄字符即原生编码，无需处理
+#endif
+
 void printUsage(const char* prog) {
+    ensureConsoleUtf8();
     std::cerr << "用法: " << prog
               << " <目录或源文件> [--lang=<语言>] [-o <输出文件>]\n"
               << "递归统计源码的代码行、注释行与空行（支持 C/C++ 与 Ruby）。\n"
@@ -34,6 +82,7 @@ void printUsage(const char* prog) {
 bool checkInvariant(const std::string& where, long lines, long code,
                     long comments, long blanks) {
     if (lines == code + comments + blanks) return true;
+    ensureConsoleUtf8();
     std::cerr << "内部错误: " << where << " 行数不自洽: Lines(" << lines
               << ") != Code(" << code << ") + Comments(" << comments
               << ") + Blanks(" << blanks << ")\n";
@@ -75,6 +124,7 @@ int main(int argc, char* argv[]) {
 
     cloc::ScanResult scan = cloc::collectSources(target);
     if (scan.sourceFiles.empty()) {
+        ensureConsoleUtf8();
         std::cerr << "在 \"" << target << "\" 中未找到受支持的源文件"
                      "（.c/.cpp/.cc/.rb/.rbw，请检查路径）。\n";
         return 1;
@@ -93,6 +143,7 @@ int main(int argc, char* argv[]) {
         }
         scan.sourceFiles.swap(kept);
         if (scan.sourceFiles.empty()) {
+            ensureConsoleUtf8();
             std::cerr << "--lang=" << langName
                       << " 过滤后没有可统计的源文件。\n";
             return 1;
@@ -129,6 +180,7 @@ int main(int argc, char* argv[]) {
 
     // 没有任何文件被成功读取：明确报错，而不是输出一张空表
     if (total.files == 0) {
+        ensureConsoleUtf8();
         std::cerr << "无法打开 \"" << firstErrorPath
                   << "\"（文件不存在或不可读）。\n";
         return 1;
@@ -149,16 +201,20 @@ int main(int argc, char* argv[]) {
     } else {
         std::ofstream out(outputFile.c_str());
         if (!out) {
+            ensureConsoleUtf8();
             std::cerr << "无法打开输出文件: " << outputFile << "\n";
             return 1;
         }
         cloc::report(summary, out);
+        ensureConsoleUtf8();
         std::cout << "统计结果已写入 " << outputFile << "\n";
     }
 
     // 诊断信息走 stderr，保证 stdout 的表格与题目样例逐字符一致
-    if (errorFiles > 0)
+    if (errorFiles > 0) {
+        ensureConsoleUtf8();
         std::cerr << errorFiles << " 个文件无法读取，已跳过。\n";
+    }
 
     return consistent ? 0 : 2;
 }
