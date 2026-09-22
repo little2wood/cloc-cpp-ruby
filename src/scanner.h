@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "counter.h"   // SourceLanguage（语言是 scanner/counter 共用的领域枚举）
+
 namespace cloc {
 
 struct ScanResult {
@@ -15,7 +17,10 @@ struct ScanResult {
 // C/C++：.c .cpp .cc；Ruby：.rb .rbw。其余文件一律跳过（计入 ignoredFiles）。
 ScanResult collectSources(const std::string& path);
 
-// 按扩展名返回语言名：.c -> "C"；.cpp/.cc -> "C++"；.rb/.rbw -> "Ruby"。
-std::string languageOf(const std::string& path);
+// 按扩展名返回语言枚举：.c/.cpp/.cc -> LangCpp；.rb/.rbw -> LangRuby。
+// 前置条件：path 已通过 collectSources 的扩展名过滤（其余扩展名一律归入
+// LangCpp，调用方不应依赖该行为）。枚举不区分 C 与 C++——两者共用同一
+// 状态机，且本项目无按语言分列的输出需求。
+SourceLanguage languageOf(const std::string& path);
 
 } // namespace cloc

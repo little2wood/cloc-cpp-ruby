@@ -116,12 +116,10 @@ ScanResult collectSources(const std::string& path) {
     return result;
 }
 
-std::string languageOf(const std::string& path) {
+SourceLanguage languageOf(const std::string& path) {
     const std::string ext = extensionOf(path);
-    if (ext == "c") return "C";
-    if (ext == "cpp" || ext == "cc") return "C++";
-    if (ext == "rb" || ext == "rbw") return "Ruby";
-    return "";
+    if (ext == "rb" || ext == "rbw") return LangRuby;
+    return LangCpp;   // .c/.cpp/.cc（collectSources 已过滤其余扩展名）
 }
 
 } // namespace cloc

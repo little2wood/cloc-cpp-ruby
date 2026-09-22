@@ -50,17 +50,23 @@ int main(int argc, char* argv[]) {
 
     const std::string target = argv[1];
     std::string outputFile;
-    std::string langFilter;   // 空 / "c++" / "ruby"
+    bool haveLangFilter = false;   // --lang=all 时为 false（不过滤）
+    cloc::SourceLanguage langFilter = cloc::LangCpp;
+    std::string langName;          // 仅用于错误信息显示（"c++"/"ruby"）
     for (int i = 2; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg == "-o" && i + 1 < argc) {
             outputFile = argv[++i];
         } else if (arg == "--lang=c++" || arg == "--lang=cpp") {
-            langFilter = "c++";
+            haveLangFilter = true;
+            langFilter = cloc::LangCpp;
+            langName = "c++";
         } else if (arg == "--lang=ruby" || arg == "--lang=rb") {
-            langFilter = "ruby";
+            haveLangFilter = true;
+            langFilter = cloc::LangRuby;
+            langName = "ruby";
         } else if (arg == "--lang=all") {
-            langFilter.clear();
+            haveLangFilter = false;
         } else {
             printUsage(argv[0]);
             return 1;
@@ -74,20 +80,20 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // --lang 过滤：剔除不属于目标语言的文件（计入 ignored）
-    if (!langFilter.empty()) {
+    // --lang 过滤：剔除不属于目标语言的文件（计入 ignored）。
+    // 语言在参数解析阶段已映射为枚举，此处直接比较枚举，全链路类型安全。
+    if (haveLangFilter) {
         std::vector<std::string> kept;
         kept.reserve(scan.sourceFiles.size());
         for (std::size_t k = 0; k < scan.sourceFiles.size(); ++k) {
-            const std::string lang = cloc::languageOf(scan.sourceFiles[k]);
-            const bool isRuby = (lang == "Ruby");
-            const bool wanted = (langFilter == "ruby") ? isRuby : !isRuby;
-            if (wanted) kept.push_back(scan.sourceFiles[k]);
-            else        ++scan.ignoredFiles;
+            if (cloc::languageOf(scan.sourceFiles[k]) == langFilter)
+                kept.push_back(scan.sourceFiles[k]);
+            else
+                ++scan.ignoredFiles;
         }
         scan.sourceFiles.swap(kept);
         if (scan.sourceFiles.empty()) {
-            std::cerr << "--lang=" << langFilter
+            std::cerr << "--lang=" << langName
                       << " 过滤后没有可统计的源文件。\n";
             return 1;
         }
@@ -107,9 +113,7 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
-        const cloc::SourceLanguage sl = (cloc::languageOf(path) == "Ruby")
-                                            ? cloc::LangRuby
-                                            : cloc::LangCpp;
+        const cloc::SourceLanguage sl = cloc::languageOf(path);
         const cloc::FileCount fc = cloc::countSource(in, sl);
 
         // 断言 1：单文件行数自洽（题目要求）
