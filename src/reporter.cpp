@@ -6,7 +6,7 @@
 //   * Files 左侧恰好 1 个空格（宽度 6 的场右对齐 5 字符词自然产生），
 //     Blanks 右侧恰好 1 个空格后到达分隔线末端 -> 分隔线共 59 个 '-'
 //   * 表头：Files / Lines / Code / Comments / Blanks（无 Language 列）
-//   * 恒远只输出一行总计数据（C/C++/Ruby 合并，不分语言、无 SUM 行）
+//   * 恒定只输出一行总计数据（C/C++/Ruby 合并，不分语言、无 SUM 行）
 //   * 恒等式 Lines = Code + Comments + Blanks 由 main 的断言保证
 
 #include "reporter.h"

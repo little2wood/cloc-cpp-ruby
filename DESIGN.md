@@ -34,12 +34,12 @@
 
 ```
 main.cpp      命令行解析（--lang 过滤）、调度、按语言汇总、断言自检（退出码 2）
-scanner.*     目录递归遍历（Win32 FindFirstFile / POSIX dirent 双实现），
+scanner.*     目录递归遍历（C++17 std::filesystem），
               扩展名过滤（.c/.cpp/.cc/.rb/.rbw，不含 .h），统计 ignored 文件数
 counter.*     核心：C++ 与 Ruby 双字符级状态机（countSource 按语言分派），
               逐字符扫描单个文件
 reporter.*    表格输出（59 列分隔线；表头 Files/Lines/Code/Comments/Blanks，
-              无 Language 列，数字右对齐；恒远单行总计，不分语言、无 SUM 行）
+              无 Language 列，数字右对齐；恒定单行总计，不分语言、无 SUM 行）
 ```
 
 数据流：`collectSources()` → `--lang` 过滤 → 逐文件 `ifstream`（二进制）→

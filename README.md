@@ -21,10 +21,10 @@
     （含 `/ 除法` 歧义的关键字判定）、`%w[]`/`%Q{}` 等 percent 字面量（含嵌套
     定界与同字符定界）、`<<EOF`/`<<-EOF` heredoc、`` `...` `` 反引号命令串、
     `"#{...}"` 插值、`?x` 字符字面量、shebang 行
-- 恒远输出单行总计：即使目录中 C/C++ 与 Ruby 混合，也合并为一行汇总（无 SUM 行、无语言分类列）
+- 恒定输出单行总计：即使目录中 C/C++ 与 Ruby 混合，也合并为一行汇总（无 SUM 行、无语言分类列）
 - `--lang=c++` / `--lang=ruby` / `--lang=all` 语言过滤选项
 - 结果输出到终端，或 `-o <文件>` 写入文件
-- 跨平台：Windows（FindFirstFile）与 Linux/macOS（dirent）双实现
+- 跨平台：基于 C++17 `std::filesystem` 递归遍历，Windows / Linux / macOS 通用
 
 ## 编译建造指南
 
@@ -105,7 +105,7 @@ README.md               本文件：编译与使用指南
 DESIGN.md               设计说明：状态机、归类规则、边缘情况清单
 src/
   main.cpp              入口：参数解析（含 --lang）、调度、汇总与断言自检
-  scanner.h / .cpp      目录递归遍历（Win32 / POSIX 双实现）
+  scanner.h / .cpp      目录递归遍历（C++17 std::filesystem）
   counter.h / .cpp      核心：C++ 与 Ruby 双状态机，统计单个文件
   reporter.h / .cpp     cloc 风格表格输出（格式集中在该文件）
 tests/
