@@ -96,12 +96,14 @@ int main(int argc, char* argv[]) {
 
     std::map<std::string, cloc::LanguageStats> byLanguage;
     long errorFiles = 0;
+    std::string firstErrorPath;
     bool consistent = true;
 
     for (size_t k = 0; k < scan.sourceFiles.size(); ++k) {
         const std::string& path = scan.sourceFiles[k];
         std::ifstream in(path.c_str(), std::ios::in | std::ios::binary);
         if (!in) {
+            if (firstErrorPath.empty()) firstErrorPath = path;
             ++errorFiles;
             continue;
         }
@@ -132,6 +134,13 @@ int main(int argc, char* argv[]) {
         if (!checkInvariant("汇总(" + st.language + ")", st.lines, st.code,
                             st.comments, st.blanks))
             consistent = false;
+    }
+
+    if (byLanguage.empty()) {
+        // 没有任何文件被成功读取：明确报错，而不是输出一张空表
+        std::cerr << "无法打开 \"" << firstErrorPath
+                  << "\"（文件不存在或不可读）。\n";
+        return 1;
     }
 
     cloc::Summary summary;
