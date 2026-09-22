@@ -14,23 +14,24 @@
 
 #include "counter_detail.h"
 
+#include <cstddef>
 #include <cctype>
 #include <cstring>
 #include <string>
 
-namespace cloc {
+namespace cloc::detail {
 
 namespace {
 
-bool startsWithAt(const std::string& t, size_t i, const char* s) {
-    for (size_t k = 0; s[k] != '\0'; ++k) {
+bool startsWithAt(const std::string& t, std::size_t i, const char* s) {
+    for (std::size_t k = 0; s[k] != '\0'; ++k) {
         if (i + k >= t.size() || t[i + k] != s[k]) return false;
     }
     return true;
 }
 
 // pos 处必须是空白、行尾或 EOF（=begin/=end 标记词的边界）
-bool followedByWsOrEol(const std::string& t, size_t pos) {
+bool followedByWsOrEol(const std::string& t, std::size_t pos) {
     if (pos >= t.size()) return true;
     const unsigned char c = static_cast<unsigned char>(t[pos]);
     return isWs(c) || c == '\n';
@@ -53,7 +54,7 @@ bool isRubyKeyword(const std::string& w) {
         "retry", "return", "super", "then", "unless", "until", "when",
         "while", "yield"
     };
-    for (size_t k = 0; k < sizeof(kw) / sizeof(kw[0]); ++k)
+    for (std::size_t k = 0; k < sizeof(kw) / sizeof(kw[0]); ++k)
         if (w == kw[k]) return true;
     return false;
 }
@@ -104,7 +105,7 @@ FileCount countRuby(const std::string& text) {
     std::string heredocId;         // heredoc 结束标识符
     bool heredocIndent = false;    // <<-EOF 允许结束行缩进
     bool heredocLineStart = false; // 当前处于行首匹配阶段
-    size_t heredocMatchPos = 0;    // 已匹配的 id 前缀长度
+    std::size_t heredocMatchPos = 0;    // 已匹配的 id 前缀长度
 
     bool hasCode = false;
     bool hasNonWs = false;
@@ -125,8 +126,8 @@ FileCount countRuby(const std::string& text) {
         }
     } atOperandEnd = { lastMean, lastWord };
 
-    const size_t n = text.size();
-    size_t i = 0;
+    const std::size_t n = text.size();
+    std::size_t i = 0;
     while (i < n) {
         const char ch = text[i];
         const unsigned char c = static_cast<unsigned char>(ch);
@@ -184,7 +185,7 @@ FileCount countRuby(const std::string& text) {
             // percent 字面量：%w[...] %q(...) %Q{...} %{...} 等
             // 处于操作数结尾（含关键字前缀例外）时是取模运算符（a % b）
             if (ch == '%' && !atOperandEnd()) {
-                size_t j = i + 1;
+                std::size_t j = i + 1;
                 if (j < n && std::isalnum(static_cast<unsigned char>(text[j])) != 0)
                     ++j;                            // 可选类型字母 w q Q i I r s
                 if (j < n && isPctDelimiter(static_cast<unsigned char>(text[j]))) {
@@ -205,7 +206,7 @@ FileCount countRuby(const std::string& text) {
             // heredoc：<< 紧跟（无空格）大写/下划线开头的标识符或引号标识符
             // （Ruby 词法规定 <<EOF 紧贴即 heredoc；带空格的 arr << item 是移位）
             if (ch == '<' && i + 1 < n && text[i + 1] == '<') {
-                size_t j = i + 2;
+                std::size_t j = i + 2;
                 bool ind = false;
                 if (j < n && (text[j] == '-' || text[j] == '~')) {
                     ind = true; ++j;
@@ -221,7 +222,7 @@ FileCount countRuby(const std::string& text) {
                     const unsigned char c0 = static_cast<unsigned char>(text[j]);
                     const bool idStart = quoted || std::isupper(c0) != 0 || c0 == '_';
                     if (idStart) {
-                        size_t k = j;
+                        std::size_t k = j;
                         while (k < n && isIdentChar(static_cast<unsigned char>(text[k]))) {
                             id += text[k]; ++k;
                         }
@@ -393,4 +394,4 @@ FileCount countRuby(const std::string& text) {
     return fc;
 }
 
-} // namespace cloc
+} // namespace cloc::detail

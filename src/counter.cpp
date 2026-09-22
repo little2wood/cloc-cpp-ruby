@@ -14,6 +14,7 @@
 #include "counter.h"
 #include "counter_detail.h"
 
+#include <cstddef>
 #include <istream>
 #include <iterator>
 #include <string>
@@ -25,8 +26,8 @@ namespace {
 // 换行归一：\r\n 与老式 Mac 的孤立 \r 统一为 \n（原地双指针，单次 O(n)）。
 // 归一属于 I/O 层规范化（与 BOM 剥离同级），两台状态机此后只处理 \n。
 void normalizeNewlines(std::string& t) {
-    size_t w = 0;
-    for (size_t r = 0; r < t.size(); ++r) {
+    std::size_t w = 0;
+    for (std::size_t r = 0; r < t.size(); ++r) {
         const char c = t[r];
         if (c == '\r') {
             if (r + 1 < t.size() && t[r + 1] == '\n') continue;  // 交给 '\n'
@@ -58,8 +59,8 @@ std::string readAllText(std::istream& in) {
 
 FileCount countSource(std::istream& in, SourceLanguage lang) {
     const std::string text = readAllText(in);
-    if (lang == LangRuby) return countRuby(text);
-    return countCpp(text);
+    if (lang == LangRuby) return detail::countRuby(text);
+    return detail::countCpp(text);
 }
 
 } // namespace cloc

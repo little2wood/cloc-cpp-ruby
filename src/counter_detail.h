@@ -1,7 +1,8 @@
 // counter_detail.h —— counter 模块内部共享定义
 //
 // 仅由 counter.cpp、counter_cpp.cpp 与 counter_ruby.cpp 包含，不属于公共 API
-// （对外入口只有 counter.h 的 countSource）。
+// （对外入口只有 counter.h 的 countSource）。内容位于 cloc::detail 命名
+// 空间——"内部共享"由命名空间本身声明，与 cloc 公共命名空间明确区分。
 //
 // 两台状态机共享的内容：
 //   * isWs / isIdentChar / classifyLine：字符分类与行结束时的三类归类
@@ -19,7 +20,7 @@
 
 #include "counter.h"
 
-namespace cloc {
+namespace cloc::detail {
 
 inline bool isWs(unsigned char c) {
     return c == ' ' || c == '\t' || c == '\v' || c == '\f';
@@ -39,4 +40,4 @@ inline void classifyLine(bool hasCode, bool hasNonWs, FileCount& fc) {
 FileCount countCpp(const std::string& text);
 FileCount countRuby(const std::string& text);
 
-} // namespace cloc
+} // namespace cloc::detail

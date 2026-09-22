@@ -15,9 +15,10 @@
 
 #include "counter_detail.h"
 
+#include <cstddef>
 #include <string>
 
-namespace cloc {
+namespace cloc::detail {
 
 namespace {
 
@@ -27,9 +28,9 @@ namespace {
 // （如 FOUR"x" 中的 R 属于 FOUR，后跟普通字符串），仅当整个前缀
 // （含编码前缀 u8/u/U/L）之前也是边界时才构成原始字符串。
 // 小写 r 不是 C++ 原始字符串前缀，不触发。
-bool isRawStringStart(const std::string& t, size_t quotePos) {
+bool isRawStringStart(const std::string& t, std::size_t quotePos) {
     if (quotePos == 0 || t[quotePos - 1] != 'R') return false;
-    const size_t r = quotePos - 1;                       // 'R' 的下标
+    const std::size_t r = quotePos - 1;                       // 'R' 的下标
     if (r == 0) return true;                             // 文件以 R" 开头
     const unsigned char prev = static_cast<unsigned char>(t[r - 1]);
     if (!isIdentChar(prev)) return true;                 // R 前是边界：空格、(、= 等
@@ -62,8 +63,8 @@ FileCount countCpp(const std::string& text) {
     bool hasCode = false;   // 本行出现过代码字符（含字符串字面量内容）
     bool hasNonWs = false;  // 本行出现过任何非空白字符
 
-    const size_t n = text.size();
-    size_t i = 0;
+    const std::size_t n = text.size();
+    std::size_t i = 0;
     while (i < n) {
         const char ch = text[i];
         const unsigned char c = static_cast<unsigned char>(ch);
@@ -157,4 +158,4 @@ FileCount countCpp(const std::string& text) {
     return fc;
 }
 
-} // namespace cloc
+} // namespace cloc::detail

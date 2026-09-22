@@ -11,6 +11,7 @@
 #include "reporter.h"
 #include "scanner.h"
 
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -77,7 +78,7 @@ int main(int argc, char* argv[]) {
     if (!langFilter.empty()) {
         std::vector<std::string> kept;
         kept.reserve(scan.sourceFiles.size());
-        for (size_t k = 0; k < scan.sourceFiles.size(); ++k) {
+        for (std::size_t k = 0; k < scan.sourceFiles.size(); ++k) {
             const std::string lang = cloc::languageOf(scan.sourceFiles[k]);
             const bool isRuby = (lang == "Ruby");
             const bool wanted = (langFilter == "ruby") ? isRuby : !isRuby;
@@ -97,7 +98,7 @@ int main(int argc, char* argv[]) {
     std::string firstErrorPath;
     bool consistent = true;
 
-    for (size_t k = 0; k < scan.sourceFiles.size(); ++k) {
+    for (std::size_t k = 0; k < scan.sourceFiles.size(); ++k) {
         const std::string& path = scan.sourceFiles[k];
         std::ifstream in(path.c_str(), std::ios::in | std::ios::binary);
         if (!in) {
