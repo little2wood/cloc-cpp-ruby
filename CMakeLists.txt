@@ -22,4 +22,8 @@ if(MSVC)
     target_compile_options(cloc PRIVATE /utf-8 /W4)
 else()
     target_compile_options(cloc PRIVATE -Wall -Wextra)
+    # MinGW：静态链接 libstdc++/libgcc/winpthread，避免同名运行时 DLL 的
+    # 版本地狱（C:\MinGW、Git、Strawberry 各带一份 ABI 不同的
+    # libstdc++-6.dll，动态链接时按 PATH 顺序可能加载到错误版本）
+    target_link_options(cloc PRIVATE -static -static-libgcc -static-libstdc++)
 endif()
