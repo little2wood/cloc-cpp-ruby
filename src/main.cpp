@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <string>
 #include <vector>
 
@@ -94,7 +93,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::map<std::string, cloc::LanguageStats> byLanguage;
+    cloc::LanguageStats total;   // 跨语言累加的总计（输出恒为单行）
     long errorFiles = 0;
     std::string firstErrorPath;
     bool consistent = true;
@@ -108,8 +107,7 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
-        const std::string lang = cloc::languageOf(path);
-        const cloc::SourceLanguage sl = (lang == "Ruby")
+        const cloc::SourceLanguage sl = (cloc::languageOf(path) == "Ruby")
                                             ? cloc::LangRuby
                                             : cloc::LangCpp;
         const cloc::FileCount fc = cloc::countSource(in, sl);
@@ -118,41 +116,27 @@ int main(int argc, char* argv[]) {
         if (!checkInvariant(path, fc.lines, fc.code, fc.comments, fc.blanks))
             consistent = false;
 
-        cloc::LanguageStats& st = byLanguage[lang];
-        st.language = lang;
-        ++st.files;
-        st.lines += fc.lines;
-        st.code += fc.code;
-        st.comments += fc.comments;
-        st.blanks += fc.blanks;
+        ++total.files;
+        total.lines += fc.lines;
+        total.code += fc.code;
+        total.comments += fc.comments;
+        total.blanks += fc.blanks;
     }
 
-    // 断言 2：每种语言汇总后仍然自洽
-    for (std::map<std::string, cloc::LanguageStats>::const_iterator
-             it = byLanguage.begin(); it != byLanguage.end(); ++it) {
-        const cloc::LanguageStats& st = it->second;
-        if (!checkInvariant("汇总(" + st.language + ")", st.lines, st.code,
-                            st.comments, st.blanks))
-            consistent = false;
-    }
-
-    if (byLanguage.empty()) {
-        // 没有任何文件被成功读取：明确报错，而不是输出一张空表
+    // 没有任何文件被成功读取：明确报错，而不是输出一张空表
+    if (total.files == 0) {
         std::cerr << "无法打开 \"" << firstErrorPath
                   << "\"（文件不存在或不可读）。\n";
         return 1;
     }
 
+    // 断言 2：总计行数自洽（各文件恒等式相加的复核）
+    if (!checkInvariant("总计", total.lines, total.code,
+                        total.comments, total.blanks))
+        consistent = false;
+
     cloc::Summary summary;
-    for (std::map<std::string, cloc::LanguageStats>::const_iterator
-             it = byLanguage.begin(); it != byLanguage.end(); ++it) {
-        const cloc::LanguageStats& st = it->second;
-        summary.total.files += st.files;
-        summary.total.lines += st.lines;
-        summary.total.code += st.code;
-        summary.total.comments += st.comments;
-        summary.total.blanks += st.blanks;
-    }
+    summary.total = total;
     summary.ignoredFiles = scan.ignoredFiles;
     summary.errorFiles = errorFiles;
 

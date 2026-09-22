@@ -43,8 +43,8 @@ reporter.*    表格输出（59 列分隔线；表头 Files/Lines/Code/Comments/
 ```
 
 数据流：`collectSources()` → `--lang` 过滤 → 逐文件 `ifstream`（二进制）→
-`countSource()`（按 `languageOf()` 分派 C++/Ruby 状态机）→ 按语言
-（`std::map`，"C" < "C++" < "Ruby"）累加 → `report()` 输出。
+`countSource()`（按 `languageOf()` 分派 C++/Ruby 状态机）→ 跨语言累加为
+单行总计（恒等式断言覆盖单文件与总计两级）→ `report()` 输出。
 
 ## 3. 核心算法：字符级状态机
 
