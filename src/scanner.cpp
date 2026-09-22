@@ -53,7 +53,16 @@ ScanResult collectSources(const std::string& path) {
     namespace fs = std::filesystem;
     std::error_code ec;
 
-    const fs::path root(path);
+    // 窄字符串 -> 宽路径的转换可能抛异常：libstdc++（GCC 13 实测）按 UTF-8
+    // 解释窄串，ANSI 代码页（如 GBK）的中文字节序列非法即抛 filesystem_error；
+    // MSVC 按 ANSI 代码页转换，argv 中的字节必可表示，不会抛。捕获后返回
+    // 空结果，由 main 报"未找到受支持的源文件"，进程优雅退出而非崩溃。
+    fs::path root;
+    try {
+        root = fs::path(path);
+    } catch (const std::filesystem::filesystem_error&) {
+        return result;
+    }
 
     if (fs::is_regular_file(root, ec)) {
         // 允许直接传入单个源文件
