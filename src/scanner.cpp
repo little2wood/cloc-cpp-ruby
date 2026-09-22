@@ -4,7 +4,11 @@
 //   * skip_permission_denied：无权限目录自动跳过
 //   * 默认不跟随目录符号链接（等价于旧实现跳过 junction/reparse point，
 //     避免循环遍历）
-//   * 全程 error_code 重载，不抛异常
+//   * 遍历与状态查询使用 error_code 重载，不抛异常；唯一的例外是
+//     Windows 上文件名宽字符 -> ANSI 窄字符的转换：无法用系统代码页
+//     表示的文件名可能抛 filesystem_error，或被静默替换为 '?'（best-fit）
+//     而损坏——两者均经 try/catch + round-trip 校验捕获，对应文件按
+//     ignored 跳过
 //
 // 业务规则（与遍历机制无关，保留）：
 //   * 只收集 .c/.cpp/.cc/.rb/.rbw；其余普通文件计入 ignoredFiles
@@ -60,7 +64,27 @@ ScanResult collectSources(const std::string& path) {
         while (!ec && it != end) {
             std::error_code entryEc;
             if (it->is_regular_file(entryEc) && !entryEc) {
-                const std::string full = it->path().string();
+                // Windows 上 fs::path 原生为宽字符；string() 需转换为系统
+                // ANSI 代码页（中文系统即 GBK）。文件名含 ACP 无法表示的
+                // 字符（emoji、其他语言等）时有两种失败形态，均按 ignored
+                // 跳过，保证统计不中断：
+                //   1. 转换失败抛 filesystem_error（标准允许）；
+                //   2. 转换"成功"但不可表示字符被静默替换为 '?'（窄字符 API
+                //      的 best-fit 行为），导致文件名损坏 -> round-trip 校验
+                //      fs::path(full) != it->path() 捕获此种情况。
+                std::string full;
+                bool nameOk = false;
+                try {
+                    full = it->path().string();
+                    nameOk = (fs::path(full) == it->path());
+                } catch (const std::filesystem::filesystem_error&) {
+                    nameOk = false;
+                }
+                if (!nameOk) {
+                    ++result.ignoredFiles;
+                    it.increment(ec);
+                    continue;
+                }
                 if (hasSourceExtension(full)) result.sourceFiles.push_back(full);
                 else ++result.ignoredFiles;   // 非源码文件计入 ignored
             }
