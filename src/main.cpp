@@ -145,8 +145,14 @@ int main(int argc, char* argv[]) {
 
     cloc::Summary summary;
     for (std::map<std::string, cloc::LanguageStats>::const_iterator
-             it = byLanguage.begin(); it != byLanguage.end(); ++it)
-        summary.languages.push_back(it->second);
+             it = byLanguage.begin(); it != byLanguage.end(); ++it) {
+        const cloc::LanguageStats& st = it->second;
+        summary.total.files += st.files;
+        summary.total.lines += st.lines;
+        summary.total.code += st.code;
+        summary.total.comments += st.comments;
+        summary.total.blanks += st.blanks;
+    }
     summary.ignoredFiles = scan.ignoredFiles;
     summary.errorFiles = errorFiles;
 

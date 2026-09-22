@@ -21,7 +21,7 @@
     （含 `/ 除法` 歧义的关键字判定）、`%w[]`/`%Q{}` 等 percent 字面量（含嵌套
     定界与同字符定界）、`<<EOF`/`<<-EOF` heredoc、`` `...` `` 反引号命令串、
     `"#{...}"` 插值、`?x` 字符字面量、shebang 行
-- 按语言（C / C++ / Ruby）分组汇总，多语言时输出 SUM 合计行
+- 恒远输出单行总计：即使目录中 C/C++ 与 Ruby 混合，也合并为一行汇总（无 SUM 行、无语言分类列）
 - `--lang=c++` / `--lang=ruby` / `--lang=all` 语言过滤选项
 - 结果输出到终端，或 `-o <文件>` 写入文件
 - 跨平台：Windows（FindFirstFile）与 Linux/macOS（dirent）双实现

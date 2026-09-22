@@ -17,7 +17,7 @@ struct LanguageStats {
 };
 
 struct Summary {
-    std::vector<LanguageStats> languages;  // 按语言名排序（"C" 在 "C++" 之前）
+    LanguageStats total;                   // 所有语言合并后的总计（单行输出）
     long ignoredFiles = 0;                 // 被跳过的非源码文件数
     long errorFiles = 0;                   // 打开/读取失败的文件数
 };
