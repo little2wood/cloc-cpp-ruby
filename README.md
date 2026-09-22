@@ -89,13 +89,14 @@ cloc <目录或源文件> [--lang=<语言>] [-o <输出文件>]
 powershell -ExecutionPolicy Bypass -File tests\verify.ps1
 ```
 
-脚本自动定位（必要时构建）`cloc.exe`，运行三组用例并逐项比对数字：
+脚本自动定位（必要时构建）`cloc.exe`，运行四组用例并逐项比对数字：
 
 | 用例 | 输入 | 期望（files lines code comments blanks） |
 |---|---|---|
 | C 题目测试用例 | `tests/case1.c` | `1 12 5 5 2` |
 | C 边缘情况 | `tests/edge_cases/`（字符串内注释符、转义、块注释内空行、行尾 `\` 续行） | `1 12 5 6 1` |
 | Ruby 题目测试用例 | `tests/case1.rb`（`=begin/=end` 块注释、`#` 行注释、代码行尾注释） | `1 7 1 4 2` |
+| C++11 原始字符串 | `tests/rawstrings.cpp`（`u8R`/`uR`/`UR`/`LR` 前缀、跨行原始串、行尾注释） | `1 11 10 1 0` |
 
 ## 项目结构
 
@@ -114,6 +115,7 @@ src/
 tests/
   case1.c               C 题目测试用例（12 行 = 5 代码 + 5 注释 + 2 空行）
   case1.rb              Ruby 题目测试用例（7 行 = 1 代码 + 4 注释 + 2 空行）
+  rawstrings.cpp        C++11 原始字符串用例（u8R/uR/UR/LR，11 行 = 10 代码 + 1 注释）
   edge_cases/edge.cpp   边缘情况用例
   edge_cases/notes.txt  非源码文件（验证 ignored 计数）
   verify.ps1            自动对拍脚本

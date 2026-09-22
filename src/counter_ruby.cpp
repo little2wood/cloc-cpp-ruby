@@ -33,7 +33,7 @@ bool startsWithAt(const std::string& t, size_t i, const char* s) {
 bool followedByWsOrEol(const std::string& t, size_t pos) {
     if (pos >= t.size()) return true;
     const unsigned char c = static_cast<unsigned char>(t[pos]);
-    return isWs(c) || c == '\r' || c == '\n';
+    return isWs(c) || c == '\n';
 }
 
 // lastMeaningful 是"操作数结尾"字符（标识符、数字、右括号、闭合引号等）
@@ -253,7 +253,7 @@ FileCount countRuby(const std::string& text) {
             // 三元运算符的 ? 处于操作数结尾，走普通分支
             if (ch == '?' && !atOperandEnd() && i + 1 < n) {
                 const unsigned char nc = static_cast<unsigned char>(text[i + 1]);
-                if (!isWs(nc) && nc != '\n' && nc != '\r') {
+                if (!isWs(nc) && nc != '\n') {
                     hasCode = true;
                     if (nc == '\\') i += 3;        // ?\n ?\\ 等转义形式
                     else            i += 2;
@@ -302,7 +302,7 @@ FileCount countRuby(const std::string& text) {
                 // 正则标志字符（/re/i 等）直接消费
                 while (i < n) {
                     const unsigned char f = static_cast<unsigned char>(text[i]);
-                    if (f != '\n' && f != '\r' && !isWs(f) &&
+                    if (f != '\n' && !isWs(f) &&
                         std::strchr("imxouesn", static_cast<char>(f)) != 0 &&
                         std::isalpha(f) != 0) {
                         hasCode = true; ++i;
