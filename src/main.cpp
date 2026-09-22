@@ -153,5 +153,9 @@ int main(int argc, char* argv[]) {
         std::cout << "统计结果已写入 " << outputFile << "\n";
     }
 
+    // 诊断信息走 stderr，保证 stdout 的表格与题目样例逐字符一致
+    if (errorFiles > 0)
+        std::cerr << errorFiles << " 个文件无法读取，已跳过。\n";
+
     return consistent ? 0 : 2;
 }

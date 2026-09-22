@@ -38,7 +38,8 @@ scanner.*     目录递归遍历（Win32 FindFirstFile / POSIX dirent 双实现�
               扩展名过滤（.c/.cpp/.cc/.rb/.rbw，不含 .h），统计 ignored 文件数
 counter.*     核心：C++ 与 Ruby 双字符级状态机（countSource 按语言分派），
               逐字符扫描单个文件
-reporter.*    cloc 风格表格输出（79 列分隔线、右对齐数字列）
+reporter.*    表格输出（79 列分隔线；表头 Files/Lines/Code/Comments/Blanks，
+              无 Language 列，数字右对齐；多语言时附 SUM 行）
 ```
 
 数据流：`collectSources()` → `--lang` 过滤 → 逐文件 `ifstream`（二进制）→
