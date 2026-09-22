@@ -29,12 +29,14 @@ namespace {
 namespace fs = std::filesystem;
 
 std::string extensionOf(const std::string& name) {
-    const std::string::size_type dot = name.find_last_of('.');
-    if (dot == std::string::npos) return "";
-    std::string ext = name.substr(dot + 1);
-    for (std::string::size_type k = 0; k < ext.size(); ++k)
-        ext[k] = static_cast<char>(
-            std::tolower(static_cast<unsigned char>(ext[k])));
+    // 用 fs::path::extension() 提取扩展名：只作用于文件名部分（最后一个点
+    // 必须在文件名内），目录名中的点不影响——"dir.cpp/README" 的扩展名是
+    // 空而不是 "cpp/README"（对全路径做 find_last_of('.') 的旧实现依赖
+    // "伪扩展名必含路径分隔符、无法匹配"这一巧合才不出错）。
+    std::string ext = fs::path(name).extension().string();
+    if (!ext.empty() && ext[0] == '.') ext.erase(0, 1);
+    for (char& ch : ext)
+        ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
     return ext;
 }
 
