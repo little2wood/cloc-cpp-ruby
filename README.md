@@ -28,7 +28,7 @@
 
 ## 编译建造指南
 
-依赖：CMake ≥ 3.15 + 支持 C++17 的编译器（MSVC 2017 15.7+、GCC 9+、Clang 7+；GCC 8 由 CMake 自动附加 `stdc++fs` 链接）。
+依赖：CMake ≥ 3.15 + 支持 C++17 的编译器（MSVC 2017 15.7+、GCC 9+、Clang 7+、macOS Xcode 11+；GCC 8 由 CMake 自动附加 `stdc++fs` 链接）。
 
 ### 方式一：CLion（Windows）
 
