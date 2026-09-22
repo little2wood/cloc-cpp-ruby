@@ -106,7 +106,10 @@ DESIGN.md               设计说明：状态机、归类规则、边缘情况�
 src/
   main.cpp              入口：参数解析（含 --lang）、调度、汇总与断言自检
   scanner.h / .cpp      目录递归遍历（C++17 std::filesystem）
-  counter.h / .cpp      核心：C++ 与 Ruby 双状态机，统计单个文件
+  counter.h / .cpp      计数核心：I/O 规范化 + countSource 语言分派
+  counter_cpp.cpp       C/C++ 状态机（六个状态）
+  counter_detail.h      counter 模块内部共享定义（行归类规则与工具）
+  counter_ruby.cpp      Ruby 状态机（加分项，独立文件）
   reporter.h / .cpp     cloc 风格表格输出（格式集中在该文件）
 tests/
   case1.c               C 题目测试用例（12 行 = 5 代码 + 5 注释 + 2 空行）

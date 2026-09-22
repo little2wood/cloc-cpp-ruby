@@ -8,6 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_executable(cloc
     src/main.cpp
     src/counter.cpp
+    src/counter_cpp.cpp
+    src/counter_ruby.cpp
     src/scanner.cpp
     src/reporter.cpp
 )

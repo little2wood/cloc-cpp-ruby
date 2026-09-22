@@ -36,11 +36,15 @@
 main.cpp      命令行解析（--lang 过滤）、调度、按语言汇总、断言自检（退出码 2）
 scanner.*     目录递归遍历（C++17 std::filesystem），
               扩展名过滤（.c/.cpp/.cc/.rb/.rbw，不含 .h），统计 ignored 文件数
-counter.*     核心：C++ 与 Ruby 双字符级状态机（countSource 按语言分派），
-              逐字符扫描单个文件
+counter.*     计数核心：I/O 规范化（BOM 剥离、换行归一）与 countSource 语言分派
+counter_cpp.cpp  C/C++ 状态机（六个状态，逐字符扫描单个文件）
+counter_ruby.cpp  Ruby 状态机（加分项，独立文件，七个状态 + 歧义启发式）
 reporter.*    表格输出（59 列分隔线；表头 Files/Lines/Code/Comments/Blanks，
               无 Language 列，数字右对齐；恒定单行总计，不分语言、无 SUM 行）
 ```
+
+两台状态机共享的行归类规则与工具（`isWs`/`isIdentChar`/`classifyLine`）
+位于内部头 `counter_detail.h`（仅被 counter 模块的实现文件包含，非公共 API）。
 
 数据流：`collectSources()` → `--lang` 过滤 → 逐文件 `ifstream`（二进制）→
 `countSource()`（按 `languageOf()` 分派 C++/Ruby 状态机）→ 跨语言累加为
