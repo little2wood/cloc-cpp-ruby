@@ -103,10 +103,13 @@ FileCount countRuby(const std::string& text) {
     int  ivDepth = 0;              // "..." 中 #{...} 插值的嵌套深度
     unsigned char pctOpen = 0, pctClose = 0;
     int  pctNest = 0;
-    std::string heredocId;         // heredoc 结束标识符
-    bool heredocIndent = false;    // <<- / <<~ 允许结束行缩进
-    bool heredocLineStart = false; // 当前处于行首匹配阶段
-    std::size_t heredocMatchPos = 0;    // 已匹配的 id 前缀长度
+    // heredoc 子状态：四个变量只在组合使用时才有意义，聚为一个结构体
+    struct HeredocState {
+        std::string id;            // 结束标识符
+        bool indent = false;       // <<- / <<~ 允许结束行缩进
+        bool lineStart = false;    // 当前处于行首匹配结束标识符的阶段
+        std::size_t matchPos = 0;  // 已匹配的 id 前缀长度
+    } heredoc;
 
     bool hasCode = false;
     bool hasNonWs = false;
@@ -115,17 +118,14 @@ FileCount countRuby(const std::string& text) {
     std::string wordBuf;           // Normal 态正在累积的词
     std::string lastWord;          // 上一个已完结的词（关键字判定用）
 
-    // 当前位置是否处于"操作数结尾"（决定 / % ? 是运算符还是字面量起始）
-    // 关键字（when/if/return...）结尾不算操作数
-    struct OperandEndCheck {
-        unsigned char& lastMean;
-        std::string& lastWord;
-        bool operator()() const {
-            if (!isOperandPos(lastMean)) return false;
-            if (isIdentChar(lastMean) && isRubyKeyword(lastWord)) return false;
-            return true;
-        }
-    } atOperandEnd = { lastMean, lastWord };
+    // 当前位置是否处于"操作数结尾"（决定 / % ? 是运算符还是字面量起始）。
+    // 关键字（when/if/return...）结尾不算操作数。引用捕获与 lastMean /
+    // lastWord 的滚动更新保持同步。
+    auto atOperandEnd = [&]() {
+        if (!isOperandPos(lastMean)) return false;
+        if (isIdentChar(lastMean) && isRubyKeyword(lastWord)) return false;
+        return true;
+    };
 
     const std::size_t n = text.size();
     std::size_t i = 0;
@@ -135,8 +135,8 @@ FileCount countRuby(const std::string& text) {
 
         if (ch == '\n') {
             // heredoc 结束行判定：行首完整匹配到 id 且到达行尾
-            if (st == RHeredoc && heredocLineStart &&
-                heredocMatchPos == heredocId.size()) {
+            if (st == RHeredoc && heredoc.lineStart &&
+                heredoc.matchPos == heredoc.id.size()) {
                 st = RNormal;      // 结束行本身按代码行处理
             }
             ++fc.lines;
@@ -150,8 +150,8 @@ FileCount countRuby(const std::string& text) {
             if (st == RLineC) st = RNormal;
             if (st == RRegex) st = RNormal;      // 正则字面量不允许跨行
             if (st == RHeredoc) {
-                heredocLineStart = true;
-                heredocMatchPos = 0;
+                heredoc.lineStart = true;
+                heredoc.matchPos = 0;
             }
             ++i;
             continue;
@@ -242,10 +242,10 @@ FileCount countRuby(const std::string& text) {
                 }
                 if (ok) {
                     st = RHeredoc;
-                    heredocId = id;
-                    heredocIndent = ind;
-                    heredocLineStart = false;
-                    heredocMatchPos = 0;
+                    heredoc.id = id;
+                    heredoc.indent = ind;
+                    heredoc.lineStart = false;
+                    heredoc.matchPos = 0;
                     hasCode = true;
                     lastMean = 0;
                     break;
@@ -343,26 +343,26 @@ FileCount countRuby(const std::string& text) {
             break;
 
         case RHeredoc:
-            if (heredocLineStart) {
+            if (heredoc.lineStart) {
                 // 阶段 1：跳过结束行缩进（仅 <<- / <<~ 允许）
-                if (heredocMatchPos == 0 && isWs(c)) {
-                    if (heredocIndent) { ++i; break; }
-                    heredocLineStart = false;       // 无缩进容忍，此行不是结束行
+                if (heredoc.matchPos == 0 && isWs(c)) {
+                    if (heredoc.indent) { ++i; break; }
+                    heredoc.lineStart = false;      // 无缩进容忍，此行不是结束行
                     hasCode = true; ++i; break;
                 }
                 // 阶段 2：逐字符匹配结束标识符
-                if (heredocMatchPos < heredocId.size()) {
-                    if (ch == heredocId[heredocMatchPos]) {
-                        ++heredocMatchPos;
+                if (heredoc.matchPos < heredoc.id.size()) {
+                    if (ch == heredoc.id[heredoc.matchPos]) {
+                        ++heredoc.matchPos;
                         hasCode = true;             // 结束行（EOF 行）非空白，算代码行
                         ++i; break;
                     }
-                    heredocLineStart = false;       // 失配：普通内容行
+                    heredoc.lineStart = false;      // 失配：普通内容行
                     hasCode = true; ++i; break;
                 }
                 // 阶段 3：id 已完整匹配，容忍行尾空白；其他字符则失配
                 if (isWs(c)) { ++i; break; }
-                heredocLineStart = false;
+                heredoc.lineStart = false;
                 hasCode = true; ++i; break;
             }
             if (!isWs(c)) hasCode = true;           // heredoc 内容中的空白行算空行
