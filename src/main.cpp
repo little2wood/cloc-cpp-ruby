@@ -11,7 +11,6 @@
 #include "reporter.h"
 #include "scanner.h"
 
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
