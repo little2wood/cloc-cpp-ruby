@@ -1,6 +1,6 @@
-# 测试数据（大型样本库不纳入版本控制，仅保留题目测试用例）
-tests/*
-!tests/case1.c
+# 大型第三方样本库不纳入版本控制（体积大，非题目用例）
+tests/lib/
+tests/Osiris/
 
 # 构建目录
 cmake-build-*/

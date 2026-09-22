@@ -1,0 +1,1 @@
+这个 .txt 文件不是源码，用来验证 scanner 会跳过它并计入 ignored 计数。

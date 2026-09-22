@@ -45,6 +45,9 @@ cmake --build build --config Release
 .\build\cloc.exe <目录>                # Ninja / MinGW 生成器
 ```
 
+> 若机器装了 Visual Studio 但没有 C++ 工具集（缺 `nmake`），默认生成器会配置失败，
+> 请显式指定可用生成器，例如 `cmake -S . -B build -G "MinGW Makefiles"` 或 `-G "Ninja"`。
+
 ### 方式三：Linux / macOS
 
 ```bash
