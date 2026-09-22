@@ -95,10 +95,11 @@ FileCount countCpp(const std::string& text) {
         const char ch = text[i];
         const unsigned char c = static_cast<unsigned char>(ch);
 
-        // \r\n / \r 统一按换行处理：先跳过 \r
-        if (ch == '\r') { ++i; continue; }
+        // 行结束：\n、\r\n 以及老式 Mac 的孤立 \r 均计为一行
+        if (ch == '\n' || ch == '\r') {
+            // \r\n 视为一个换行：\r 与其后的 \n 一并消费
+            if (ch == '\r' && i + 1 < n && text[i + 1] == '\n') ++i;
 
-        if (ch == '\n') {
             // ---- 行结束：归类 ----
             ++fc.lines;
             classifyLine(hasCode, hasNonWs, fc);
@@ -296,9 +297,11 @@ FileCount countRuby(const std::string& text) {
         const char ch = text[i];
         const unsigned char c = static_cast<unsigned char>(ch);
 
-        if (ch == '\r') { ++i; continue; }
+        // 行结束：\n、\r\n 以及老式 Mac 的孤立 \r 均计为一行
+        if (ch == '\n' || ch == '\r') {
+            // \r\n 视为一个换行：\r 与其后的 \n 一并消费
+            if (ch == '\r' && i + 1 < n && text[i + 1] == '\n') ++i;
 
-        if (ch == '\n') {
             // heredoc 结束行判定：行首完整匹配到 id 且到达行尾
             if (st == RHeredoc && heredocLineStart &&
                 heredocMatchPos == heredocId.size()) {
