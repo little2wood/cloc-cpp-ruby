@@ -37,7 +37,8 @@ bool followedByWsOrEol(const std::string& t, std::size_t pos) {
     return isWs(c) || c == '\n';
 }
 
-// lastMeaningful 是"操作数结尾"字符（标识符、数字、右括号、闭合引号等）
+// lastMean（上一个非空白字符）为"操作数结尾"字符时（标识符、数字、
+// 右括号、闭合引号等）
 // -> 其后的 / 与 % 与 << 是运算符（除法、取模、移位），否则是字面量起始。
 bool isOperandPos(unsigned char lastMean) {
     if (lastMean == 0) return false;              // 行首
@@ -103,7 +104,7 @@ FileCount countRuby(const std::string& text) {
     unsigned char pctOpen = 0, pctClose = 0;
     int  pctNest = 0;
     std::string heredocId;         // heredoc 结束标识符
-    bool heredocIndent = false;    // <<-EOF 允许结束行缩进
+    bool heredocIndent = false;    // <<- / <<~ 允许结束行缩进
     bool heredocLineStart = false; // 当前处于行首匹配阶段
     std::size_t heredocMatchPos = 0;    // 已匹配的 id 前缀长度
 
@@ -187,7 +188,8 @@ FileCount countRuby(const std::string& text) {
             if (ch == '%' && !atOperandEnd()) {
                 std::size_t j = i + 1;
                 if (j < n && std::isalnum(static_cast<unsigned char>(text[j])) != 0)
-                    ++j;                            // 可选类型字母 w q Q i I r s
+                    ++j;                            // 可选类型字母（Ruby 实有
+                                                    // w W q Q i I r s；此处接受任意字母数字）
                 if (j < n && isPctDelimiter(static_cast<unsigned char>(text[j]))) {
                     pctOpen = static_cast<unsigned char>(text[j]);
                     pctClose = matchingCloseOf(pctOpen);
@@ -342,7 +344,7 @@ FileCount countRuby(const std::string& text) {
 
         case RHeredoc:
             if (heredocLineStart) {
-                // 阶段 1：跳过结束行缩进（仅 <<- 允许）
+                // 阶段 1：跳过结束行缩进（仅 <<- / <<~ 允许）
                 if (heredocMatchPos == 0 && isWs(c)) {
                     if (heredocIndent) { ++i; break; }
                     heredocLineStart = false;       // 无缩进容忍，此行不是结束行
