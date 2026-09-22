@@ -49,7 +49,24 @@ bool isRawStringStart(const std::string& t, size_t quotePos) {
     return false;                                        // R 属于更长标识符
 }
 
-// 读入全部内容并剥离 UTF-8 BOM
+// 换行归一：\r\n 与老式 Mac 的孤立 \r 统一为 \n（原地双指针，单次 O(n)）。
+// 归一属于 I/O 层规范化（与 BOM 剥离同级），两台状态机此后只处理 \n。
+void normalizeNewlines(std::string& t) {
+    size_t w = 0;
+    for (size_t r = 0; r < t.size(); ++r) {
+        const char c = t[r];
+        if (c == '\r') {
+            if (r + 1 < t.size() && t[r + 1] == '\n') continue;  // 交给 '\n'
+            t[w++] = '\n';                                       // 孤立 \r
+        } else {
+            t[w++] = c;
+        }
+    }
+    t.resize(w);
+}
+
+// 读入全部内容并做 I/O 层规范化：剥离 UTF-8 BOM、换行归一（\r\n 与孤立 \r
+// 统一为 \n）
 std::string readAllText(std::istream& in) {
     std::string text;
     text.assign(std::istreambuf_iterator<char>(in),
@@ -60,6 +77,7 @@ std::string readAllText(std::istream& in) {
         static_cast<unsigned char>(text[2]) == 0xBF) {
         text.erase(0, 3);
     }
+    normalizeNewlines(text);
     return text;
 }
 
@@ -95,11 +113,7 @@ FileCount countCpp(const std::string& text) {
         const char ch = text[i];
         const unsigned char c = static_cast<unsigned char>(ch);
 
-        // 行结束：\n、\r\n 以及老式 Mac 的孤立 \r 均计为一行
-        if (ch == '\n' || ch == '\r') {
-            // \r\n 视为一个换行：\r 与其后的 \n 一并消费
-            if (ch == '\r' && i + 1 < n && text[i + 1] == '\n') ++i;
-
+        if (ch == '\n') {
             // ---- 行结束：归类 ----
             ++fc.lines;
             classifyLine(hasCode, hasNonWs, fc);
@@ -107,9 +121,7 @@ FileCount countCpp(const std::string& text) {
             hasNonWs = false;
 
             // ---- 行拼接：换行前最后一个字符是 '\' 时，注释/字符串延续 ----
-            size_t j = i;
-            while (j > 0 && text[j - 1] == '\r') --j;
-            const bool continued = (j > 0 && text[j - 1] == '\\');
+            const bool continued = (i > 0 && text[i - 1] == '\\');
 
             if (st == StLineComment) {
                 if (!continued) st = StNormal;
@@ -297,11 +309,7 @@ FileCount countRuby(const std::string& text) {
         const char ch = text[i];
         const unsigned char c = static_cast<unsigned char>(ch);
 
-        // 行结束：\n、\r\n 以及老式 Mac 的孤立 \r 均计为一行
-        if (ch == '\n' || ch == '\r') {
-            // \r\n 视为一个换行：\r 与其后的 \n 一并消费
-            if (ch == '\r' && i + 1 < n && text[i + 1] == '\n') ++i;
-
+        if (ch == '\n') {
             // heredoc 结束行判定：行首完整匹配到 id 且到达行尾
             if (st == RHeredoc && heredocLineStart &&
                 heredocMatchPos == heredocId.size()) {
