@@ -29,6 +29,26 @@ inline bool isIdentChar(unsigned char c) {
     return std::isalnum(c) != 0 || c == '_';
 }
 
+// 是否处于 C++11 原始字符串的起始（quotePos 指向 '"'）：
+//   R"(...)" / u8R"(...)" / uR"(...)" / UR"(...)" / LR"(...)
+// 词法采用 maximal munch：R 前若为标识符字符，则 R 属于更长的标识符
+// （如 FOUR"x" 中的 R 属于 FOUR，后跟普通字符串），仅当整个前缀
+// （含编码前缀 u8/u/U/L）之前也是边界时才构成原始字符串。
+// 小写 r 不是 C++ 原始字符串前缀，不触发。
+bool isRawStringStart(const std::string& t, size_t quotePos) {
+    if (quotePos == 0 || t[quotePos - 1] != 'R') return false;
+    const size_t r = quotePos - 1;                       // 'R' 的下标
+    if (r == 0) return true;                             // 文件以 R" 开头
+    const unsigned char prev = static_cast<unsigned char>(t[r - 1]);
+    if (!isIdentChar(prev)) return true;                 // R 前是边界：空格、(、= 等
+    if (prev == '8')                                     // u8R
+        return r >= 2 && t[r - 2] == 'u' &&
+               (r == 2 || !isIdentChar(static_cast<unsigned char>(t[r - 3])));
+    if (prev == 'u' || prev == 'U' || prev == 'L')       // uR / UR / LR
+        return r == 1 || !isIdentChar(static_cast<unsigned char>(t[r - 2]));
+    return false;                                        // R 属于更长标识符
+}
+
 // 读入全部内容并剥离 UTF-8 BOM
 std::string readAllText(std::istream& in) {
     std::string text;
@@ -104,18 +124,17 @@ FileCount countCpp(const std::string& text) {
         switch (st) {
         case StNormal:
             if (ch == '"') {
-                st = StString; hasCode = true; ++i;
+                if (isRawStringStart(text, i)) {
+                    st = StRawString; hasCode = true; ++i;   // 只消费 '"'，'(' 在态内消费
+                } else {
+                    st = StString; hasCode = true; ++i;
+                }
             } else if (ch == '\'') {
                 st = StChar; hasCode = true; ++i;
             } else if (ch == '/' && i + 1 < n && text[i + 1] == '/') {
                 st = StLineComment; hasNonWs = true; i += 2;
             } else if (ch == '/' && i + 1 < n && text[i + 1] == '*') {
                 st = StBlockComment; hasNonWs = true; i += 2;
-            } else if ((ch == 'R' || ch == 'r') && i + 1 < n &&
-                       text[i + 1] == '"' &&
-                       (i == 0 ||
-                        !isIdentChar(static_cast<unsigned char>(text[i - 1])))) {
-                st = StRawString; hasCode = true; i += 2;
             } else {
                 if (!isWs(c)) hasCode = true;
                 ++i;
