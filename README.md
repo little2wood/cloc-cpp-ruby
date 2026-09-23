@@ -42,7 +42,7 @@
 
 ```powershell
 cmake -S . -B build
-cmake --build build --config Release
+cmake --build build --config Release   # --config 仅 VS/Xcode 等多配置生成器需要，MinGW/Ninja 下可省略
 .\build\Release\cloc.exe <目录>        # VS 生成器
 .\build\cloc.exe <目录>                # Ninja / MinGW 生成器
 ```

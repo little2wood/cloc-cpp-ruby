@@ -131,10 +131,12 @@ reporter.*    表格输出（59 列分隔线；表头 Files/Lines/Code/Comments/
    字面量内容中的**全空白行算空行**（与 cloc 行为一致）。
 5. shebang（`#!/usr/bin/env ruby`）按注释行处理（Ruby 语言语义）。
 
-## 6. 断言策略（题目要求）
+## 6. 断言策略
 
-- 单文件级与语言汇总级均校验 `Lines == Code + Comments + Blanks`；
-- 采用显式校验而非 `assert()`：Release 构建（`-DNDEBUG`）下依然生效；
+- **题目要求**：`Lines == Code + Comments + Blanks` 必须成立，程序需自检；
+- **实现选择**：采用显式校验而非 `assert()`——`assert()` 在 Release 构建
+  （`-DNDEBUG`）下会被编译为空、自检失效，显式校验保证任何构建配置下
+  题目要求的自检都存在且有效；
 - 校验失败输出诊断信息到 stderr，进程以退出码 `2` 结束。
 
 ## 7. 与开源 cloc 的对照验证
