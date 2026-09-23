@@ -72,8 +72,7 @@ void printUsage(const char* prog) {
               << "递归统计源码的代码行、注释行与空行（支持 C/C++ 与 Ruby）。\n"
               << "  --lang=c++    只统计 C/C++ 源文件（.c/.cpp/.cc）\n"
               << "  --lang=ruby   只统计 Ruby 源文件（.rb/.rbw）\n"
-              << "  --lang=all    两种语言都统计（默认）\n"
-              << "  需要保存结果时用 shell 重定向：cloc <目录> > result.txt\n";
+              << "  --lang=all    两种语言都统计（默认）\n";
 }
 
 // 题目要求的自检断言：Lines == Code + Comments + Blanks。
