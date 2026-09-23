@@ -1,11 +1,10 @@
 // main.cpp —— cloc 入口：命令行解析、调度、汇总与断言自检
 //
-// 用法: cloc <目录或源文件> [--lang=<语言>] [-o <输出文件>]
+// 用法: cloc <目录或源文件> [--lang=<语言>]
 //   --lang=c++    只统计 C/C++ 源文件（.c/.cpp/.cc）
 //   --lang=ruby   只统计 Ruby 源文件（.rb/.rbw）
 //   --lang=all    两种语言都统计（默认）
-//   -o <文件>     将结果写入文件而非标准输出
-// 退出码: 0 正常；1 用法/路径/输出文件错误；2 行数恒等式校验失败
+// 退出码: 0 正常；1 用法/路径错误；2 行数恒等式校验失败
 
 #include "counter.h"
 #include "reporter.h"
@@ -69,12 +68,12 @@ inline void ensureConsoleUtf8() {}   // 非 Windows：窄字符即原生编码�
 void printUsage(const char* prog) {
     ensureConsoleUtf8();
     std::cerr << "用法: " << prog
-              << " <目录或源文件> [--lang=<语言>] [-o <输出文件>]\n"
+              << " <目录或源文件> [--lang=<语言>]\n"
               << "递归统计源码的代码行、注释行与空行（支持 C/C++ 与 Ruby）。\n"
               << "  --lang=c++    只统计 C/C++ 源文件（.c/.cpp/.cc）\n"
               << "  --lang=ruby   只统计 Ruby 源文件（.rb/.rbw）\n"
               << "  --lang=all    两种语言都统计（默认）\n"
-              << "  -o <文件>     将结果写入文件而非标准输出\n";
+              << "  需要保存结果时用 shell 重定向：cloc <目录> > result.txt\n";
 }
 
 // 题目要求的自检断言：Lines == Code + Comments + Blanks。
@@ -98,15 +97,12 @@ int main(int argc, char* argv[]) {
     }
 
     const std::string target = argv[1];
-    std::string outputFile;
     bool haveLangFilter = false;   // --lang=all 时为 false（不过滤）
     cloc::SourceLanguage langFilter = cloc::LangCpp;
     std::string langName;          // 仅用于错误信息显示（"c++"/"ruby"）
     for (int i = 2; i < argc; ++i) {
         const std::string arg = argv[i];
-        if (arg == "-o" && i + 1 < argc) {
-            outputFile = argv[++i];
-        } else if (arg == "--lang=c++" || arg == "--lang=cpp") {
+        if (arg == "--lang=c++" || arg == "--lang=cpp") {
             haveLangFilter = true;
             langFilter = cloc::LangCpp;
             langName = "c++";
@@ -196,19 +192,7 @@ int main(int argc, char* argv[]) {
     summary.ignoredFiles = scan.ignoredFiles;
     summary.errorFiles = errorFiles;
 
-    if (outputFile.empty()) {
-        cloc::report(summary, std::cout);
-    } else {
-        std::ofstream out(outputFile.c_str());
-        if (!out) {
-            ensureConsoleUtf8();
-            std::cerr << "无法打开输出文件: " << outputFile << "\n";
-            return 1;
-        }
-        cloc::report(summary, out);
-        ensureConsoleUtf8();
-        std::cout << "统计结果已写入 " << outputFile << "\n";
-    }
+    cloc::report(summary, std::cout);
 
     // 诊断信息走 stderr，保证 stdout 的表格与题目样例逐字符一致
     if (errorFiles > 0) {

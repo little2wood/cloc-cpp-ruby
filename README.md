@@ -25,42 +25,50 @@
     `"#{...}"` 插值、`?x` 字符字面量、shebang 行
 - 恒定输出单行总计：即使目录中 C/C++ 与 Ruby 混合，也合并为一行汇总（无 SUM 行、无语言分类列）
 - `--lang=c++` / `--lang=ruby` / `--lang=all` 语言过滤选项
-- 结果输出到终端，或 `-o <文件>` 写入文件
+- 结果输出到终端（需要保存时用 shell 重定向：`cloc <目录> > result.txt`）
 - 跨平台：基于 C++17 `std::filesystem` 递归遍历，Windows / Linux / macOS 通用
 
 ## 编译建造指南
 
 依赖：CMake ≥ 3.15 + 支持 C++17 的编译器（MSVC 2017 15.7+、GCC 9+、Clang 7+、macOS Xcode 11+；GCC 8 由 CMake 自动附加 `stdc++fs` 链接）。
 
-### 方式一：CLion（Windows）
+### 方式一：CLion（图形界面，Windows / macOS / Linux 均可）
 
 1. 用 CLion 打开项目根目录（含 `CMakeLists.txt`），等待 CMake 自动加载；
-2. 工具链选 MSVC 或 MinGW 均可，点击 **Build**（`Ctrl+F9`）；
-3. 可执行文件生成在 `cmake-build-<配置>/cloc.exe`。
+2. 工具链自动检测即可——Windows 选 MSVC 或 MinGW；macOS 用 Apple Clang（需
+   Xcode Command Line Tools）；Linux 用系统 GCC/Clang，均无需手动指定；
+3. 点击 **Build**（Windows/Linux `Ctrl+F9`，macOS `⌘F9`），可执行文件生成在
+   `cmake-build-<配置>/` 下：Windows 为 `cloc.exe`，macOS/Linux 为 `cloc`。
 
-### 方式二：命令行（Windows，PowerShell）
+### 方式二：命令行（Windows，PowerShell，Git Bash）
 
-```powershell
-cmake -S . -B build
-cmake --build build --config Release   # --config 仅 VS/Xcode 等多配置生成器需要，MinGW/Ninja 下可省略
-.\build\Release\cloc.exe <目录>        # VS 生成器
-.\build\cloc.exe <目录>                # Ninja / MinGW 生成器
+```MinGW
+MinGW:
+cmake -S . -B build -G "MinGW Makefiles" # 显式指定生成器
+cmake --build build                      # 编译
+.\build\cloc                             # 程序所在目录
 ```
-
+```VS工具集
+vs工具集:
+cmake -S . -B build                    # 检测工具链并生成构建系统
+cmake --build build --config Release   # 编译
+.\build\Release\cloc                   # 程序所在目录
+```
 > 若机器装了 Visual Studio 但没有 C++ 工具集（缺 `nmake`），默认生成器会配置失败，
-> 请显式指定可用生成器，例如 `cmake -S . -B build -G "MinGW Makefiles"` 或 `-G "Ninja"`。
+> 请显式指定可用生成器，例如 `cmake -S . -B build -G "MinGW Makefiles"，推荐用MinGW`
 
-### 方式三：Linux / macOS
+### 方式三：命令行（Linux / macOS）
 
 ```bash
-cmake -S . -B build && cmake --build build
-./build/cloc <目录>
+cmake -S . -B build                    #与windows类似
+cmake --build build
+./build/cloc
 ```
 
 ## 使用方法
 
 ```
-cloc <目录或源文件> [--lang=<语言>] [-o <输出文件>]
+cloc <目录或源文件> [--lang=<语言>]
 
 --lang=c++     只统计 C/C++ 源文件（.c/.cpp/.cc）
 --lang=ruby    只统计 Ruby 源文件（.rb/.rbw）
@@ -70,10 +78,9 @@ cloc <目录或源文件> [--lang=<语言>] [-o <输出文件>]
 示例：
 
 ```powershell
-.\build\cloc.exe D:\code\cpp-project
-.\build\cloc.exe tests\case1.c
-.\build\cloc.exe D:\code\ruby-project --lang=ruby
-.\build\cloc.exe . -o result.txt
+.\build\cloc tests\Osiris --lang=cpp
+.\build\cloc tests\case1.c
+.\build\cloc tests\lib --lang=ruby
 ```
 
 示例输出（题目测试用例 `tests/case1.c`，与实际运行逐字符一致）：
@@ -86,7 +93,7 @@ cloc <目录或源文件> [--lang=<语言>] [-o <输出文件>]
 -----------------------------------------------------------
 ```
 
-退出码：`0` 正常；`1` 用法 / 路径 / 输出文件错误；`2` 行数恒等式自检失败。
+退出码：`0` 正常；`1` 用法 / 路径错误；`2` 行数恒等式自检失败。
 
 > 提示：诊断信息以 UTF-8 编码输出。Windows 下程序在输出中文诊断前会自动把
 > 控制台代码页切换为 UTF-8、进程退出时恢复原设置，PowerShell / CMD 中中文
@@ -94,10 +101,6 @@ cloc <目录或源文件> [--lang=<语言>] [-o <输出文件>]
 > 统计表格为纯 ASCII，任何终端均不受影响。
 
 ## 运行测试
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tests\verify.ps1
-```
 
 脚本自动定位（必要时构建）`cloc.exe`，运行四组用例并逐项比对数字：
 
@@ -130,6 +133,3 @@ tests/
   edge_cases/notes.txt  非源码文件（验证 ignored 计数）
   verify.ps1            自动对拍脚本
 ```
-
-> 提交打包时仅包含上述源码与文档，**不要**包含 `build/`、`cmake-build-*/`
-> 等构建产物或任何二进制文件。
