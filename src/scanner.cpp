@@ -8,7 +8,7 @@
 //     - collectSources 入口的窄字符串 -> 宽路径（见下方 try/catch）；
 //     - 枚举得到的宽路径 -> 窄字符串（见循环内 round-trip 校验）。
 //
-// 非 ASCII 文件名的行为依赖标准库实现（详见 DESIGN.md 第 8 节）：
+// 非 ASCII 文件名的行为依赖标准库实现
 //   * MSVC：string() 转换为 ANSI 代码页，无法表示的字符抛 filesystem_error
 //     或被静默替换为 '?'（best-fit）——经 round-trip 校验捕获，按 ignored
 //     跳过；
@@ -92,9 +92,8 @@ ScanResult collectSources(const std::string& path) {
         while (!ec && it != end) {
             std::error_code entryEc;
             if (it->is_regular_file(entryEc) && !entryEc) {
-                // 宽路径 -> 窄字符串的行为随标准库实现而异（详见 DESIGN.md
-                // 第 8 节）：MSVC 转换为 ANSI 代码页（中文系统即 GBK），文件
-                // 名含 ACP 无法表示的字符（emoji、其他语言等）时有两种失败
+                // 宽路径 -> 窄字符串的行为随标准库实现而异：MSVC 转换为 ANSI 代码页（中文系统即 GBK），
+                // 文件名含 ACP 无法表示的字符（emoji、其他语言等）时有两种失败
                 // 形态——转换失败抛 filesystem_error（标准允许），或转换
                 // "成功"但不可表示字符被静默替换为 '?'（窄字符 API 的
                 // best-fit 行为）导致文件名损坏；两者均由 try/catch +
