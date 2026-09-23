@@ -35,7 +35,8 @@
 ```
 main.cpp      命令行解析（--lang 过滤）、调度、按语言汇总、断言自检（退出码 2）
 scanner.*     目录递归遍历（C++17 std::filesystem），
-              扩展名过滤（.c/.cpp/.cc/.rb/.rbw，不含 .h），统计 ignored 文件数
+              扩展名过滤（.c/.cpp/.cc 仅识别全小写；.rb/.rbw 不区分大小写；
+              不含 .h），统计 ignored 文件数
 counter.*     计数核心：I/O 规范化（BOM 剥离、换行归一）与 countSource 语言分派
 counter_cpp.cpp  C/C++ 状态机（六个状态，逐字符扫描单个文件）
 counter_ruby.cpp  Ruby 状态机（加分项，独立文件，七个状态 + 歧义启发式）

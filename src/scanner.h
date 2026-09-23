@@ -14,7 +14,8 @@ struct ScanResult {
 };
 
 // 递归收集 path（目录或单个文件）下所有受支持的源文件：
-// C/C++：.c .cpp .cc；Ruby：.rb .rbw。其余文件一律跳过（计入 ignoredFiles）。
+// C/C++：.c .cpp .cc（仅识别全小写，.C/.CPP/.Cc 等忽略）；
+// Ruby：.rb/.rbw（不区分大小写）。其余文件一律跳过（计入 ignoredFiles）。
 ScanResult collectSources(const std::string& path);
 
 // 按扩展名返回语言枚举：.c/.cpp/.cc -> LangCpp；.rb/.rbw -> LangRuby。
