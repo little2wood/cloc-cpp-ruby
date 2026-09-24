@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
         const cloc::SourceLanguage sl = cloc::languageOf(path);
         const cloc::FileCount fc = cloc::countSource(in, sl);
 
-        // 断言 1：单文件行数自洽（题目要求）
+        // 断言 1：单文件行数自洽（题目提及）
         if (!checkInvariant(path, fc.lines, fc.code, fc.comments, fc.blanks))
             consistent = false;
 
