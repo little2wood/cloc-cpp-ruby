@@ -295,8 +295,9 @@ FileCount countRuby(const std::string& text) {
             break;
 
         case RRegex:
-            if (ch == '\\' && i + 1 < n) {
-                hasCode = true; i += 2; break;
+            if (ch == '\\' && i + 1 < n && text[i + 1] != '\n') {
+                hasCode = true;                     // 转义：一次消费两字符（不吞换行）
+                i += 2; break;
             }
             if (ch == '/') {
                 st = RNormal;
@@ -320,8 +321,9 @@ FileCount countRuby(const std::string& text) {
             break;
 
         case RPct:
-            if (ch == '\\' && i + 1 < n) {
-                hasCode = true; i += 2; break;
+            if (ch == '\\' && i + 1 < n && text[i + 1] != '\n') {
+                hasCode = true;                     // 转义：一次消费两字符（不吞换行）
+                i += 2; break;
             }
             if (static_cast<unsigned char>(ch) == pctClose) {
                 if (pctOpen == pctClose) {
